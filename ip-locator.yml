@@ -1,0 +1,84 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ip-locator-config
+data:
+  DATABASE_HOST: "acid-minimal-cluster"
+  DATABASE_PORT: "5432"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ip-locator
+  labels:
+    app: ip-locator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ip-locator
+  template:
+    metadata:
+      labels:
+        app: ip-locator
+    spec:
+      containers:
+      - name: ip-locator
+        image: your-registry/ip-locator:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres.acid-minimal-cluster.credentials.postgresql.acid.zalan.do
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres.acid-minimal-cluster.credentials.postgresql.acid.zalan.do
+              key: password
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: ip-locator-config
+              key: DATABASE_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: ip-locator-config
+              key: DATABASE_PORT
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ip-locator
+spec:
+  selector:
+    app: ip-locator
+  ports:
+  - port: 80
+    targetPort: 5000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ip-locator-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: locip.arvan.ir
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ip-locator
+            port:
+              number: 80
+
