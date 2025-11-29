@@ -31,6 +31,12 @@ jobs:
             registry: ${{ env.DOCKER_REGISTRY }}
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_PASSWORD }}
+
+        - name: Set outputs
+          id: vars
+          run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        - name: Check outputs
+          run: echo ${{ steps.vars.outputs.sha_short }}
   
   
         - name: Build and push Landing Page Docker image
@@ -40,12 +46,12 @@ jobs:
             file: ./dockerfile
             push: true
             tags: |
-              ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha_short }}
+              ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.vars.outputs.sha_short }}
 
         
         - name: Update ip-locator.yml with new image tag
           run: |
-              sed -i "s|image:.*|image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}|" ip-locator.yml
+              sed -i "s|image:.*|image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.vars.outputs.sha_short }}|" ip-locator.yml
               cat ip-locator.yml
 
         - name: Copy manifest to master and apply
