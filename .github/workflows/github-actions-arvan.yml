@@ -43,12 +43,6 @@ jobs:
               cat ip-locator.yml
 
         - name: Copy manifest to master and apply
-          uses: appleboy/ssh-action@v0.1.7
-          with:
-                host: ${{ secrets.K8S_MASTER_IP }}
-                username: ${{ secrets.K8S_USER }}
-                script: |
-                  export KUBECONFIG=/etc/kubernetes/admin.conf
-                  kubectl apply -f /tmp/ip-locator.yml
-                  kubectl get pods
-                pre-command: scp ip-locator.yml ${{ secrets.K8S_USER }}@${{ secrets.K8S_MASTER_IP }}:/tmp/ip-locator.yml
+          run: |
+              scp ip-locator.yml ${{ secrets.K8S_USER }}@${{ secrets.K8S_MASTER_IP }}:/tmp/ip-locator.yml &&\
+              ansible-playbook -i ${{ secrets.K8S_MASTER_IP }}, apply-k8s.yml --user ${{ secrets.K8S_USER }}

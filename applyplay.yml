@@ -1,0 +1,16 @@
+---
+- name: Apply Kubernetes manifest
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Copy manifest to remote host
+      ansible.builtin.copy:
+        src: "./ip-locator.yml"
+        dest: "/tmp/ip-locator.yml"
+        mode: '0644'
+
+    - name: Apply manifest with kubectl
+      ansible.builtin.shell: |
+        kubectl apply -f "/tmp/ip-locator.yml"
+      args:
+        warn: false
