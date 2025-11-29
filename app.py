@@ -33,7 +33,7 @@ HTML_FORM = """
 <html>
 <head><title>IP Locator</title></head>
 <body>
-  <h1>IP Locator</h1>
+  <h1>IP Locator(HaHAHa finalay ...)</h1>
   <form method="POST">
     <label>Enter IP: </label>
     <input type="text" name="ip" required>
