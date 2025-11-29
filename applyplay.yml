@@ -9,8 +9,8 @@
         dest: "/tmp/ip-locator.yml"
         mode: '0644'
 
-    - name: Apply manifest with kubectl
-      ansible.builtin.shell: |
-        kubectl apply -f "/tmp/ip-locator.yml"
-      args:
-        warn: false
+    - name: Apply ingress manifest
+      shell: |
+          kubectl apply -f /tmp/ksm-ingress.yml
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
