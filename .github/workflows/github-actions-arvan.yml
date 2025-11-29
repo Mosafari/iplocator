@@ -1,0 +1,79 @@
+# Script environment variables
+env:
+    DOCKER_IMAGE_NAME: iplocator
+    DOCKER_REGISTRY: docker.io/devotem
+name: Build and Push Docker Image
+  
+# Triggers
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - main
+  
+jobs:
+    build-and-push-landing-page:
+      name: Build and Push Docker Image
+      runs-on: self-hosted
+  
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+  
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v3
+  
+        - name: Login to Docker Registry
+          uses: docker/login-action@v3
+          with:
+            registry: ${{ env.DOCKER_REGISTRY }}
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+  
+        - name: Get latest image version
+          id: get_version
+          run: |
+              # Fetch all tags from Docker registry (adjust for your registry API)
+              # For simplicity, we use git tags here:
+              LATEST_TAG=$(git tag --list 'v*' | sort -V | tail -n1)
+              echo "Latest tag: $LATEST_TAG"
+              if [ -z "$LATEST_TAG" ]; then
+                NEXT_TAG="v0.1"
+              else
+                # Extract numeric parts
+                VERSION_NUM=$(echo $LATEST_TAG | sed 's/v//')
+                NEXT=$(echo "$VERSION_NUM + 0.1" | bc)
+                NEXT_TAG="v$NEXT"
+              fi
+              echo "Next tag: $NEXT_TAG"
+              # Save as output
+              echo "VERSION=$NEXT_TAG" >> $GITHUB_OUTPUT
+  
+        - name: Build and push Landing Page Docker image
+          uses: docker/build-push-action@v6
+          with:
+            context: .
+            file: ./dockerfile
+            push: true
+            tags: |
+              ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.get_version.outputs.VERSION }}
+            cache-from: type=registry,ref=${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:buildcache
+            cache-to: type=registry,ref=${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:buildcache,mode=max
+        
+        - name: Update ip-locator.yml with new image tag
+          run: |
+              sed -i "s|image:.*|image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.get_version.outputs.VERSION }}|" ip-locator.yml
+              cat ip-locator.yml
+
+        - name: Copy manifest to master and apply
+          uses: appleboy/ssh-action@v0.1.7
+          with:
+                host: ${{ secrets.K8S_MASTER_IP }}
+                username: ${{ secrets.K8S_USER }}
+                script: |
+                  export KUBECONFIG=/etc/kubernetes/admin.conf
+                  kubectl apply -f /tmp/ip-locator.yml
+                  kubectl get pods
+                pre-command: scp ip-locator.yml ${{ secrets.K8S_USER }}@${{ secrets.K8S_MASTER_IP }}:/tmp/ip-locator.yml
