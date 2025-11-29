@@ -32,24 +32,6 @@ jobs:
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_PASSWORD }}
   
-        - name: Get latest image version
-          id: get_version
-          run: |
-              # Fetch all tags from Docker registry (adjust for your registry API)
-              # For simplicity, we use git tags here:
-              LATEST_TAG=$(git tag --list 'v*' | sort -V | tail -n1)
-              echo "Latest tag: $LATEST_TAG"
-              if [ -z "$LATEST_TAG" ]; then
-                NEXT_TAG="v0.1"
-              else
-                # Extract numeric parts
-                VERSION_NUM=$(echo $LATEST_TAG | sed 's/v//')
-                NEXT=$(echo "$VERSION_NUM + 0.1" | bc)
-                NEXT_TAG="v$NEXT"
-              fi
-              echo "Next tag: $NEXT_TAG"
-              # Save as output
-              echo "VERSION=$NEXT_TAG" >> $GITHUB_OUTPUT
   
         - name: Build and push Landing Page Docker image
           uses: docker/build-push-action@v6
@@ -58,13 +40,12 @@ jobs:
             file: ./dockerfile
             push: true
             tags: |
-              ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.get_version.outputs.VERSION }}
-            cache-from: type=registry,ref=${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:buildcache
-            cache-to: type=registry,ref=${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:buildcache,mode=max
+              ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}}
+
         
         - name: Update ip-locator.yml with new image tag
           run: |
-              sed -i "s|image:.*|image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.get_version.outputs.VERSION }}|" ip-locator.yml
+              sed -i "s|image:.*|image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}|" ip-locator.yml
               cat ip-locator.yml
 
         - name: Copy manifest to master and apply
