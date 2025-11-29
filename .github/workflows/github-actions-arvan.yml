@@ -44,5 +44,4 @@ jobs:
 
         - name: Copy manifest to master and apply
           run: |
-              scp ip-locator.yml ${{ secrets.K8S_USER }}@${{ secrets.K8S_MASTER_IP }}:/tmp/ip-locator.yml &&\
               ansible-playbook -i ${{ secrets.K8S_MASTER_IP }}, applyplay.yml --user ${{ secrets.K8S_USER }}
