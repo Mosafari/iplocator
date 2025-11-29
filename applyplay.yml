@@ -9,8 +9,8 @@
         dest: "/tmp/ip-locator.yml"
         mode: '0644'
 
-    - name: Apply ingress manifest
+    - name: Apply manifest
       shell: |
-          kubectl apply -f /tmp/ksm-ingress.yml
+          kubectl apply -f /tmp/ip-locator.yml
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
