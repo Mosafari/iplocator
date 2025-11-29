@@ -40,7 +40,7 @@ jobs:
             file: ./dockerfile
             push: true
             tags: |
-              ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}}
+              ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha_short }}
 
         
         - name: Update ip-locator.yml with new image tag
