@@ -4,8 +4,9 @@ kind: ConfigMap
 metadata:
   name: ip-locator-config
 data:
-  DATABASE_HOST: "acid-minimal-cluster"
+  DATABASE_HOST: "acid-minimal-cluster.default.svc.cluster.local"
   DATABASE_PORT: "5432"
+  DATABAE_DB: "bar"
 
 ---
 apiVersion: apps/v1
@@ -26,19 +27,19 @@ spec:
     spec:
       containers:
       - name: ip-locator
-        image: your-registry/ip-locator:latest
+        image: docker.io/devotem/iplocator:v0.10
         ports:
         - containerPort: 5000
         env:
         - name: DB_USER
           valueFrom:
             secretKeyRef:
-              name: postgres.acid-minimal-cluster.credentials.postgresql.acid.zalan.do
+              name: zalando.acid-minimal-cluster.credentials.postgresql.acid.zalan.do
               key: username
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: postgres.acid-minimal-cluster.credentials.postgresql.acid.zalan.do
+              name: zalando.acid-minimal-cluster.credentials.postgresql.acid.zalan.do
               key: password
         - name: DB_HOST
           valueFrom:
@@ -70,6 +71,7 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
+  ingressClassName: nginx
   rules:
   - host: locip.arvan.ir
     http:
@@ -81,4 +83,3 @@ spec:
             name: ip-locator
             port:
               number: 80
-
