@@ -16,6 +16,7 @@ DB_HOST = os.environ.get("DB_HOST")
 DB_PORT = os.environ.get("DATABASE_PORT", 5432)
 DB_DB = os.environ.get("DATABASE_DB", "bar")
 DB_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_DB}?sslmode=require"
+print(DB_URL)
 engine = create_engine(DB_URL)
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
